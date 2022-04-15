@@ -203,6 +203,76 @@ where
             PermutationState::Empty => { return; }
         };
     }
+
+    /// skip_fast skips given number of top-level order of permutations without
+    /// actually iterating over skipped ones.
+    /// E.g. for sequence [1, 2, 3], skip_fast(1) jums straight to [2, 1, 3].
+    /// This is useful for fast forwarding number of first permutations. Skip
+    /// method of Iterator trait consumes all skipped permutations, which is much slower.
+    pub fn skip_fast(&mut self, jump: usize) {
+        let &mut Permutations { ref mut vals, ref mut state } = self;
+
+        let n = vals.len();
+        let mut indices: Vec<usize> = (0..n).rev().collect();
+        let mut cycles: Vec<usize> = (0..n).rev().collect();
+
+        cycles[0] -= jump - 1;
+        for i in 1..n {
+            cycles[i] = 0;
+        }
+
+        // Remove last element (0)
+        indices.remove(n-1);
+        // Insert 0 to the front
+        indices.insert(0, 0);
+
+        for i in 1..jump {
+            indices.swap(0, n-i);
+        }
+
+        // jump 1
+        // cycles[0] = 3;
+        // cycles[1] = 0;
+        // cycles[2] = 0;
+        // cycles[3] = 0;
+        // indices[0] = 0;
+        // indices[1] = 3;
+        // indices[2] = 2;
+        // indices[3] = 1;
+
+        // jump 2
+        // cycles[0] = 2;
+        // cycles[1] = 0;
+        // cycles[2] = 0;
+        // cycles[3] = 0;
+        // indices[0] = 1;
+        // indices[1] = 3;
+        // indices[2] = 2;
+        // indices[3] = 0;
+        
+        // jump 3
+        // cycles[0] = 1;
+        // cycles[1] = 0;
+        // cycles[2] = 0;
+        // cycles[3] = 0;
+        // indices[0] = 2;
+        // indices[1] = 3;
+        // indices[2] = 1;
+        // indices[3] = 0;
+        
+        // jump 4
+        // cycles[0] = 0;
+        // cycles[1] = 0;
+        // cycles[2] = 0;
+        // cycles[3] = 0;
+        // indices[0] = 3;
+        // indices[1] = 2;
+        // indices[2] = 1;
+        // indices[3] = 0;
+        
+        *state = PermutationState::Complete(CompleteState::Ongoing { indices, cycles });
+    }
+
 }
 
 impl CompleteState {
